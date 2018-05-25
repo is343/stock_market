@@ -15,48 +15,30 @@ import {
   Tooltip,
 } from "react-jsx-highstock";
 
-import axios from "axios";
-// import { data } from "./data";
-
-export const createDataPoint = (
-  time = Date.now(),
-  magnitude = 1000,
-  offset = 0,
-) => {
-  return [time + offset * magnitude, Math.round(Math.random() * 100 * 2) / 2];
-};
-
-export const createRandomData = (time, magnitude, points = 100) => {
-  const data = [];
-  let i = points * -1 + 1;
-  for (i; i <= 0; i++) {
-    data.push(createDataPoint(time, magnitude, i));
-  }
-  return data;
-};
-
 class StockChart extends Component {
   constructor(props) {
     super(props);
-
-    const now = Date.now();
-    this.state = {
-      data1: createRandomData(now, 1e7, 500),
-      data3: createRandomData(now, 1e7, 500),
-    };
     console.log("====================================");
     console.log(this.props);
-    console.log(this.props.data.data);
-    console.log("====================================");
-    console.log("====================================");
-    console.log(this.state.data1);
     console.log("====================================");
   }
 
   render() {
-    const { data1, data2 } = this.state;
-    const { data } = this.props.data;
-    const { stock } = this.props.data;
+    const stockData = this.props.data.map(stock => {
+      return (
+        <div key={stock.stock}>
+          <SplineSeries id={stock.stock} name={stock.stock} data={stock.data} />
+        </div>
+      );
+    });
+
+    const keyData = this.props.data.map(stock => {
+      return (
+        <div key={stock.stock}>
+          <Navigator.Series seriesId={stock.stock} />
+        </div>
+      );
+    });
 
     return (
       <div className="app">
@@ -91,18 +73,10 @@ class StockChart extends Component {
 
           <YAxis id="price">
             <YAxis.Title>Price</YAxis.Title>
-            <AreaSplineSeries id={stock} name={stock} data={data} />
+            {stockData}
           </YAxis>
 
-          <YAxis id="social" opposite>
-            <YAxis.Title>Social Buzz</YAxis.Title>
-            <SplineSeries id="twitter" name="Twitter mentions" data={data2} />
-          </YAxis>
-
-          <Navigator>
-            <Navigator.Series seriesId={stock} />
-            <Navigator.Series seriesId="twitter" />
-          </Navigator>
+          <Navigator>{keyData}</Navigator>
         </HighchartsStockChart>
       </div>
     );

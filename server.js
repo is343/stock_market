@@ -106,12 +106,16 @@ async function getAllData(stockList, socketId) {
         console.log(response.data.dataset.data.length);
         console.log("====================================");
         const responseData = response.data.dataset.data;
-        // chart requires unix dates
         // mapping the array ends up mutating the arrays within
-        const filteredData = response.data.dataset.data.map(datum => {
+        let filteredData = [];
+        filteredData = response.data.dataset.data.map(datum => {
+          // chart requires unix dates
           let date = new Date(datum[0]);
           datum[0] = date.getTime();
+          // prevent excess digets for price
+          datum[1] = Number(datum[1].toFixed(2));
         });
+        console.log(filteredData[0]);
         collectedData.push({
           stock,
           name: response.data.dataset.name,
@@ -142,11 +146,13 @@ function getOne(stock, socketId) {
       console.log(response.data.dataset.data.length);
       console.log("====================================");
       const responseData = response.data.dataset.data;
-      // chart requires unix dates
       // mapping the array ends up mutating the arrays within
       const filteredData = response.data.dataset.data.map(datum => {
+        // chart requires unix dates
         let date = new Date(datum[0]);
         datum[0] = date.getTime();
+        // prevent excess digets for price
+        datum[1] = Number(datum[1].toFixed(2));
       });
       // to return to client via socket
       const collectedData = {

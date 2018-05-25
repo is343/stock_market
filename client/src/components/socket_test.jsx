@@ -79,6 +79,8 @@ class SocketTest extends Component {
       console.log(message);
     });
 
+    const { stockData } = this.state;
+
     return (
       <div style={{ textAlign: "center" }}>
         <div>
@@ -102,9 +104,7 @@ class SocketTest extends Component {
             Delete
           </button>
         </div>
-        {!_.isEmpty(this.state.stockData) ? (
-          <StockChart data={this.state.stockData[0]} />
-        ) : null}
+        {!_.isEmpty(stockData) ? <StockChart data={stockData} /> : null}
       </div>
     );
   }
