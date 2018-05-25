@@ -1,2 +1,3 @@
-export const GET_USERS = "GET_USERS";
-export const UPDATE_USER = "REMOVE_USER";
+export const GET_ALL_STOCKS = "GET_ALL_STOCKS";
+export const GET_ONE_STOCK = "GET_ONE_STOCK";
+export const DELETE_STOCK = "DELETE_STOCK";

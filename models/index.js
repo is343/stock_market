@@ -25,5 +25,4 @@ mongoose.connect(
 );
 
 // EXPORT MODELS
-module.exports.User = require("./user");
 module.exports.Stock = require("./stock");

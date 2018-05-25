@@ -8,7 +8,6 @@ import {
   YAxis,
   Title,
   Legend,
-  AreaSplineSeries,
   SplineSeries,
   Navigator,
   RangeSelector,
@@ -18,16 +17,23 @@ import {
 class StockChart extends Component {
   constructor(props) {
     super(props);
-    console.log("====================================");
-    console.log(this.props);
-    console.log("====================================");
+    this.state = {
+      open: false,
+    };
   }
+  handleTooltipClose = () => {
+    this.setState({ open: false });
+  };
+
+  handleTooltipOpen = () => {
+    this.setState({ open: true });
+  };
 
   render() {
     const stockData = this.props.data.map(stock => {
       return (
         <div key={stock.stock}>
-          <SplineSeries id={stock.stock} name={stock.stock} data={stock.data} />
+          <SplineSeries id={stock.stock} name={stock.name} data={stock.data} />
         </div>
       );
     });
@@ -39,13 +45,12 @@ class StockChart extends Component {
         </div>
       );
     });
-
     return (
       <div className="app">
         <HighchartsStockChart>
           <Chart zoomType="x" />
 
-          <Title>Highstocks Example</Title>
+          <Title>Stock Price History</Title>
 
           <Legend>
             <Legend.Title>Key</Legend.Title>
@@ -72,7 +77,7 @@ class StockChart extends Component {
           </XAxis>
 
           <YAxis id="price">
-            <YAxis.Title>Price</YAxis.Title>
+            <YAxis.Title>Price (USD)</YAxis.Title>
             {stockData}
           </YAxis>
 

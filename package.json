@@ -1,7 +1,7 @@
 {
-  "name": "stock_market",
+  "name": "stock_price_history",
   "version": "1.0.0",
-  "description": "Stock market history",
+  "description": "Stock price history",
   "main": "server.js",
   "scripts": {
     "client-install": "cd client && npm install",

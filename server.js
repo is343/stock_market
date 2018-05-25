@@ -21,8 +21,8 @@ const io = socketIO(server);
 // DB IMPORT
 const db = require("./models");
 
-// ROUTE IMPORTS
-const stockRoutes = require("./routes/stock");
+// UTILITY IMPORT
+const util = require("./utilities");
 
 //////////////////////
 // MIDDLEWARE SETUP //
@@ -37,12 +37,6 @@ app.use(express.json()); // parse application/json
 app.use(express.static(path.join(__dirname, "client/build")));
 app.use(cors()); // allows any domain can make a request for the api
 
-////////////////
-// SET ROUTES //
-////////////////
-
-app.use("/api", stockRoutes);
-
 /////////////////////
 // SOCKET IO SETUP //
 /////////////////////
@@ -51,6 +45,7 @@ io.on("connection", socket => {
   console.log("Client connected", socket.id);
 
   socket.on("read", () => {
+    util.dummyStockData();
     getAllStocks(socket.id);
   });
 
@@ -68,12 +63,6 @@ io.on("connection", socket => {
     console.log("Client disconnected");
   });
 });
-
-app.get("/:company", getAllData);
-
-function test(color) {
-  return io.sockets.emit("change color", color);
-}
 
 //////////////////////
 // ACTION FUNCTIONS //
@@ -102,9 +91,6 @@ async function getAllData(stockList, socketId) {
     await axios
       .get(url)
       .then(response => {
-        console.log("====================================");
-        console.log(response.data.dataset.data.length);
-        console.log("====================================");
         const responseData = response.data.dataset.data;
         // mapping the array ends up mutating the arrays within
         let filteredData = [];
@@ -112,19 +98,21 @@ async function getAllData(stockList, socketId) {
           // chart requires unix dates
           let date = new Date(datum[0]);
           datum[0] = date.getTime();
-          // prevent excess digets for price
+          // prevent excess digits for price
           datum[1] = Number(datum[1].toFixed(2));
         });
-        console.log(filteredData[0]);
+        // to remove everything extra after the name
+        let name = response.data.dataset.name;
+        name = name.substring(0, name.indexOf(")") + 1);
         collectedData.push({
           stock,
-          name: response.data.dataset.name,
+          name,
           data: responseData,
         });
       })
       .catch(error => {
         console.error("Stock info GET error:", error.response.status);
-        if (error.response.status === 404) {
+        if (error.response.status === 404 || error.response.status === 400) {
           deleteStock(stock);
           return sendMessage("Invalid ticker symbol");
         }
@@ -142,22 +130,22 @@ function getOne(stock, socketId) {
   axios
     .get(url)
     .then(response => {
-      console.log("====================================");
-      console.log(response.data.dataset.data.length);
-      console.log("====================================");
       const responseData = response.data.dataset.data;
       // mapping the array ends up mutating the arrays within
       const filteredData = response.data.dataset.data.map(datum => {
         // chart requires unix dates
         let date = new Date(datum[0]);
         datum[0] = date.getTime();
-        // prevent excess digets for price
+        // prevent excess digits for price
         datum[1] = Number(datum[1].toFixed(2));
       });
+      // to remove everything extra after the name
+      let name = response.data.dataset.name;
+      name = name.substring(0, name.indexOf(")") + 1);
       // to return to client via socket
       const collectedData = {
         stock,
-        name: response.data.dataset.name,
+        name,
         data: responseData,
       };
       console.log("Read One: Number of stock data sent:", 1);
@@ -165,7 +153,7 @@ function getOne(stock, socketId) {
     })
     .catch(error => {
       console.error("Stock info GET error:", error.response.status);
-      if (error.response.status === 404) {
+      if (error.response.status === 404 || error.response.status === 400) {
         deleteStock(stock);
         return sendMessage("Invalid ticker symbol", socketId);
       }
@@ -177,7 +165,8 @@ function sendMessage(message, socketId) {
 }
 
 function createStock(stock, socketId) {
-  const newStock = new db.Stock({ stock: stock.toUpperCase() });
+  stock = stock.toUpperCase();
+  const newStock = new db.Stock({ stock: stock });
   db.Stock.create(newStock)
     .then(stock => {
       getOne(stock.stock, socketId);
@@ -188,7 +177,8 @@ function createStock(stock, socketId) {
 }
 
 function deleteStock(stock) {
-  db.Stock.deleteOne({ stock: stock.toUpperCase() }, err => {
+  stock = stock.toUpperCase();
+  db.Stock.deleteOne({ stock: stock }, err => {
     if (err) {
       console.error("DB delete error:", err);
     } else {
