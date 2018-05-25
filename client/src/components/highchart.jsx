@@ -35,34 +35,27 @@ export const createRandomData = (time, magnitude, points = 100) => {
   return data;
 };
 
-let filteredData;
-
-const data = axios.get("/googl").then(res => {
-  console.log("====================================");
-  console.log(res.data);
-  console.log("====================================");
-  filteredData = res.data;
-});
-
-console.log("====================================");
-console.log(filteredData);
-console.log("====================================");
-
-class App extends Component {
+class StockChart extends Component {
   constructor(props) {
     super(props);
 
     const now = Date.now();
     this.state = {
-      // data1: createRandomData(now, 1e7, 500),
-      data1: filteredData,
-      data2: filteredData,
-      // data2: createRandomData(now, 1e7, 500),
+      data1: createRandomData(now, 1e7, 500),
+      data3: createRandomData(now, 1e7, 500),
     };
+    console.log("====================================");
+    console.log(this.props);
+    console.log(this.props.data.data);
+    console.log("====================================");
+    console.log("====================================");
+    console.log(this.state.data1);
+    console.log("====================================");
   }
 
   render() {
     const { data1, data2 } = this.state;
+    const { data } = this.props.data;
 
     return (
       <div className="app">
@@ -97,7 +90,7 @@ class App extends Component {
 
           <YAxis id="price">
             <YAxis.Title>Price</YAxis.Title>
-            <AreaSplineSeries id="profit" name="Profit" data={data1} />
+            <AreaSplineSeries id="profit" name="Profit" data={data} />
           </YAxis>
 
           <YAxis id="social" opposite>
@@ -115,4 +108,4 @@ class App extends Component {
   }
 }
 
-export default withHighcharts(App, Highcharts);
+export default withHighcharts(StockChart, Highcharts);

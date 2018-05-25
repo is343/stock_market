@@ -1,5 +1,8 @@
 import React, { Component } from "react";
+import _ from "lodash";
 import socketIOClient from "socket.io-client";
+
+import StockChart from "./highchart";
 
 const endpoint = "http://localhost:5000/";
 const socket = socketIOClient(endpoint);
@@ -10,6 +13,7 @@ class SocketTest extends Component {
 
     this.state = {
       inputText: "",
+      stockData: [],
     };
   }
 
@@ -29,18 +33,47 @@ class SocketTest extends Component {
     this.setState({ inputText: "" });
   };
 
-  handleDelete = stock => {
+  handleDeleteSend = stock => {
     // const socket = socketIOClient(this.state.endpoint);
     socket.emit("delete", stock);
     this.setState({ inputText: "" });
   };
 
-  render() {
-    // testing for socket connections
+  handleDeleteReceive = stock => {
+    const currentStocks = _.cloneDeep(this.state.stockData);
+    const filteredStocks = currentStocks.filter(val => {
+      return val.stock !== stock;
+    });
+    this.setState({ stockData: filteredStocks });
+  };
 
-    // const socket = socketIOClient(this.state.endpoint);
+  handleRead = stockData => {
+    this.setState({ stockData });
+  };
+
+  handleReadOne = stock => {
+    const stockName = stock.stock;
+    const updatedData = _.cloneDeep(this.state.stockData);
+    // prevent multiples due to bounces
+    let bounceCheck = false;
+    bounceCheck = updatedData.some(val => {
+      return val.stock === stockName;
+    });
+    if (!bounceCheck) {
+      updatedData.push(stock);
+    }
+    this.setState({ stockData: updatedData });
+  };
+
+  render() {
     socket.on("read", stocks => {
-      console.log(stocks);
+      this.handleRead(stocks);
+    });
+    socket.on("readOne", stock => {
+      this.handleReadOne(stock);
+    });
+    socket.on("delete", stock => {
+      this.handleDeleteReceive(stock);
     });
     socket.on("message", message => {
       console.log(message);
@@ -48,22 +81,30 @@ class SocketTest extends Component {
 
     return (
       <div style={{ textAlign: "center" }}>
-        <button onClick={() => this.getAll()}>Get All Stocks</button>
-        <input
-          type="text"
-          name="inputText"
-          value={this.state.inputText}
-          onChange={this.handleChange}
-        />
-        <button id="blue" onClick={() => this.handleAdd(this.state.inputText)}>
-          Add
-        </button>
-        <button
-          id="red"
-          onClick={() => this.handleDelete(this.state.inputText)}
-        >
-          Delete
-        </button>
+        <div>
+          <button onClick={() => this.getAll()}>Get All Stocks</button>
+          <input
+            type="text"
+            name="inputText"
+            value={this.state.inputText}
+            onChange={this.handleChange}
+          />
+          <button
+            id="blue"
+            onClick={() => this.handleAdd(this.state.inputText)}
+          >
+            Add
+          </button>
+          <button
+            id="red"
+            onClick={() => this.handleDeleteSend(this.state.inputText)}
+          >
+            Delete
+          </button>
+        </div>
+        {!_.isEmpty(this.state.stockData) ? (
+          <StockChart data={this.state.stockData[0]} />
+        ) : null}
       </div>
     );
   }
