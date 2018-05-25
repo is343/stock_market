@@ -56,6 +56,7 @@ class StockChart extends Component {
   render() {
     const { data1, data2 } = this.state;
     const { data } = this.props.data;
+    const { stock } = this.props.data;
 
     return (
       <div className="app">
@@ -90,7 +91,7 @@ class StockChart extends Component {
 
           <YAxis id="price">
             <YAxis.Title>Price</YAxis.Title>
-            <AreaSplineSeries id="profit" name="Profit" data={data} />
+            <AreaSplineSeries id={stock} name={stock} data={data} />
           </YAxis>
 
           <YAxis id="social" opposite>
@@ -99,7 +100,7 @@ class StockChart extends Component {
           </YAxis>
 
           <Navigator>
-            <Navigator.Series seriesId="profit" />
+            <Navigator.Series seriesId={stock} />
             <Navigator.Series seriesId="twitter" />
           </Navigator>
         </HighchartsStockChart>

@@ -37,25 +37,4 @@ function createStock(req, res) {
     });
 }
 
-function checkValidity(stock) {
-  const url = `https://www.quandl.com/api/v3/datasets/WIKI/${stock}.json?api_key=${
-    process.env.API_KEY
-  }`;
-  axios
-    .get(url)
-    .then(response => {
-      console.log("====================================");
-      console.log(response);
-      console.log("====================================");
-      return true;
-    })
-    .catch(error => {
-      console.log(error);
-      console.log("====================================");
-      console.log("in");
-      console.log("====================================");
-      return false;
-    });
-}
-
 module.exports = router;

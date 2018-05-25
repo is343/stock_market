@@ -51,7 +51,7 @@ io.on("connection", socket => {
   console.log("Client connected", socket.id);
 
   socket.on("read", () => {
-    getAllStocks();
+    getAllStocks(socket.id);
   });
 
   socket.on("delete", stock => {
@@ -79,7 +79,7 @@ function test(color) {
 // ACTION FUNCTIONS //
 //////////////////////
 
-function getAllStocks() {
+function getAllStocks(socketId) {
   // omit the _id and __v
   const query = db.Stock.find({}).select("-_id -__v");
   query.exec((err, stocks) => {
@@ -87,14 +87,13 @@ function getAllStocks() {
       console.error("DB find error:", err);
       return err;
     } else {
-      getAllData(stocks);
+      getAllData(stocks, socketId);
     }
   });
 }
 
-async function getAllData(stockList) {
+async function getAllData(stockList, socketId) {
   const collectedData = [];
-  let filteredData;
   for (let i = 0; i < stockList.length; i++) {
     let stock = stockList[i].stock;
     const url = `https://www.quandl.com/api/v3/datasets/WIKI/${stock}.json?column_index=4&order=asc&api_key=${
@@ -106,10 +105,17 @@ async function getAllData(stockList) {
         console.log("====================================");
         console.log(response.data.dataset.data.length);
         console.log("====================================");
+        const responseData = response.data.dataset.data;
+        // chart requires unix dates
+        // mapping the array ends up mutating the arrays within
+        const filteredData = response.data.dataset.data.map(datum => {
+          let date = new Date(datum[0]);
+          datum[0] = date.getTime();
+        });
         collectedData.push({
           stock,
           name: response.data.dataset.name,
-          data: response.data.dataset.data,
+          data: responseData,
         });
       })
       .catch(error => {
@@ -122,7 +128,7 @@ async function getAllData(stockList) {
   }
   // to return to client via socket
   console.log("Read: Number of stock data sent:", collectedData.length);
-  return io.sockets.emit("read", collectedData);
+  return io.sockets.connected[socketId].emit("read", collectedData);
 }
 
 function getOne(stock, socketId) {
@@ -135,14 +141,21 @@ function getOne(stock, socketId) {
       console.log("====================================");
       console.log(response.data.dataset.data.length);
       console.log("====================================");
+      const responseData = response.data.dataset.data;
+      // chart requires unix dates
+      // mapping the array ends up mutating the arrays within
+      const filteredData = response.data.dataset.data.map(datum => {
+        let date = new Date(datum[0]);
+        datum[0] = date.getTime();
+      });
       // to return to client via socket
       const collectedData = {
         stock,
         name: response.data.dataset.name,
-        data: response.data.dataset.data,
+        data: responseData,
       };
-      console.log("Read: Number of stock data sent:", 1);
-      return io.sockets.emit("read", collectedData);
+      console.log("Read One: Number of stock data sent:", 1);
+      return io.sockets.emit("readOne", collectedData);
     })
     .catch(error => {
       console.error("Stock info GET error:", error.response.status);
@@ -158,7 +171,7 @@ function sendMessage(message, socketId) {
 }
 
 function createStock(stock, socketId) {
-  const newStock = new db.Stock({ stock });
+  const newStock = new db.Stock({ stock: stock.toUpperCase() });
   db.Stock.create(newStock)
     .then(stock => {
       getOne(stock.stock, socketId);
@@ -169,7 +182,7 @@ function createStock(stock, socketId) {
 }
 
 function deleteStock(stock) {
-  db.Stock.deleteOne({ stock }, err => {
+  db.Stock.deleteOne({ stock: stock.toUpperCase() }, err => {
     if (err) {
       console.error("DB delete error:", err);
     } else {
